@@ -12,8 +12,12 @@ import _root_.android.view.{KeyEvent, Menu, MenuItem, View}
 import _root_.android.widget.SimpleCursorAdapter
 import _root_.android.widget.Spinner
 import _root_.android.widget.TextView
-import _root_.com.google.android.maps._
+import _root_.android.widget.Toast
+import _root_.org.mapsforge.android.maps._
+import _root_.org.mapsforge.core.GeoPoint
+import _root_.org.mapsforge.android.maps.overlay.{ItemizedOverlay, OverlayItem}
 import _root_.scala.collection.mutable.ArrayBuffer
+import _root_.java.io.File
 import _root_.java.util.ArrayList
 
 // to make scala-style iterating over arraylist possible
@@ -42,7 +46,7 @@ class MapAct extends MapActivity with UIHelper {
 
 		locReceiver.startTask(null)
 		showObjects = prefs.getShowObjects()
-		mapview.setSatellite(prefs.getShowSatellite())
+		//mapview.setSatellite(prefs.getShowSatellite())
 		mapview.getOverlays().add(staoverlay)
 
 		// listen for new positions
@@ -58,6 +62,7 @@ class MapAct extends MapActivity with UIHelper {
 			setLongTitle(R.string.app_map, targetcall)
 		setKeepScreenOn()
 		setVolumeControls()
+		reloadMapAndTheme()
 	}
 
 	override def onConfigurationChanged(c : Configuration) = {
@@ -70,7 +75,20 @@ class MapAct extends MapActivity with UIHelper {
 		super.onDestroy()
 		unregisterReceiver(locReceiver)
 	}
-	override def isRouteDisplayed() = false
+	//override def isRouteDisplayed() = false
+
+	def reloadMapAndTheme() {
+		val mapfile = new File(prefs.getString("mapfile", android.os.Environment.getExternalStorageDirectory() + "/aprsdroid.map"))
+		if (mapfile.exists())
+			mapview.setMapFile(mapfile)
+		else {
+			Toast.makeText(this, getString(R.string.mapfile_error, mapfile), Toast.LENGTH_SHORT).show()
+			finish()
+		}
+		val themefile = new File(prefs.getString("themefile", android.os.Environment.getExternalStorageDirectory() + "/aprsdroid.xml"))
+		if (themefile.exists())
+			mapview.setRenderTheme(themefile)
+	}
 
 	override def onCreateOptionsMenu(menu : Menu) : Boolean = {
 		getMenuInflater().inflate(R.menu.options_map, menu);
@@ -107,7 +125,7 @@ class MapAct extends MapActivity with UIHelper {
 		case R.id.satellite =>
 			val newState = prefs.toggleBoolean("show_satellite", false)
 			mi.setChecked(newState)
-			mapview.setSatellite(newState)
+			//mapview.setSatellite(newState)
 			true
 		case _ =>
 			if (targetcall != "" && callsignAction(mi.getItemId, targetcall))
@@ -139,14 +157,14 @@ class MapAct extends MapActivity with UIHelper {
 	}
 
 	def changeZoom(delta : Int) {
-		mapview.getController().setZoom(mapview.getZoomLevel() + delta)
+		mapview.getController().setZoom(mapview.getMapPosition().getZoomLevel() + delta)
 	}
 
 	def animateToCall() {
 		if (targetcall != "") {
 			val (found, lat, lon) = getStaPosition(db, targetcall)
 			if (found)
-				mapview.getController().animateTo(new GeoPoint(lat, lon))
+				mapview.getController().setCenter(new GeoPoint(lat, lon))
 		}
 	}
 
@@ -170,11 +188,11 @@ class Station(val movelog : ArrayBuffer[GeoPoint], val pt : GeoPoint,
 	extends OverlayItem(pt, call, origin) {
 
 	def inArea(bl : GeoPoint, tr : GeoPoint) = {
-		val lat_ok = (bl.getLatitudeE6 <= pt.getLatitudeE6 && pt.getLatitudeE6 <= tr.getLatitudeE6)
-		val lon_ok = if (bl.getLongitudeE6 <= tr.getLongitudeE6)
-				     (bl.getLongitudeE6 <= pt.getLongitudeE6 && pt.getLongitudeE6 <= tr.getLongitudeE6)
+		val lat_ok = (bl.latitudeE6 <= pt.latitudeE6 && pt.latitudeE6 <= tr.latitudeE6)
+		val lon_ok = if (bl.longitudeE6 <= tr.longitudeE6)
+				     (bl.longitudeE6 <= pt.longitudeE6 && pt.longitudeE6 <= tr.longitudeE6)
 			     else
-				     (bl.getLongitudeE6 <= pt.getLongitudeE6 || pt.getLongitudeE6 <= tr.getLongitudeE6)
+				     (bl.longitudeE6 <= pt.longitudeE6 || pt.longitudeE6 <= tr.longitudeE6)
 		lat_ok && lon_ok
 	}
 }
@@ -191,6 +209,8 @@ class StationOverlay(icons : Drawable, context : MapAct, db : StorageDatabase) e
 	val iconbitmap = icons.asInstanceOf[BitmapDrawable].getBitmap
 	val symbolSize = iconbitmap.getWidth()/16
 	lazy val drawSize = (context.getResources().getDisplayMetrics().density * 24).toInt
+
+	icons.setBounds(0, 0, symbolSize, symbolSize)
 
 	override def size() = stations.size()
 	override def createItem(idx : Int) : Station = stations.get(idx)
@@ -248,8 +268,7 @@ class StationOverlay(icons : Drawable, context : MapAct, db : StorageDatabase) e
 		c.drawPath(path, tracePaint)
 	}
 
-	override def draw(c : Canvas, m : MapView, shadow : Boolean) : Unit = {
-		if (shadow) return;
+	override def drawOverlayBitmap(c : Canvas, dp : Point, proj : Projection, zoom : Byte) : Unit = {
 
 		Log.d(TAG, "draw: symbolSize=" + symbolSize + " drawSize=" + drawSize)
 		val fontSize = drawSize*7/8
@@ -273,8 +292,6 @@ class StationOverlay(icons : Drawable, context : MapAct, db : StorageDatabase) e
 
 
 		val p = new Point()
-		val proj = m.getProjection()
-		val zoom = m.getZoomLevel()
 		val (width, height) = (c.getWidth(), c.getHeight())
 		val ss = drawSize/2
 		for (s <- stations) {
@@ -397,9 +414,6 @@ class StationOverlay(icons : Drawable, context : MapAct, db : StorageDatabase) e
 
 	def replace_stations(s : ArrayList[Station]) {
 		stations = s
-		// work around NullPointerException in ItemizedOverlay
-		// http://groups.google.com/group/android-developers/browse_thread/thread/38b11314e34714c3
-		setLastFocusedIndex(-1)
 		Benchmark("populate") { populate() }
 		context.onPostLoad()
 	}
