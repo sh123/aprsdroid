@@ -11,13 +11,16 @@ import _root_.android.util.Log
 import _root_.android.view.{ContextMenu, LayoutInflater, Menu, MenuItem, View, WindowManager}
 import _root_.android.widget.AdapterView.AdapterContextMenuInfo
 import _root_.android.widget.{EditText, Toast}
-
-import java.io.{PrintWriter, File}
+import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import android.content.pm.PackageManager
+import android.provider.Settings
+
 trait UIHelper extends Activity
 		with LoadingIndicator
+		with PermissionHelper
 		with DialogInterface.OnClickListener 
 		with DialogInterface.OnCancelListener {
 
@@ -49,7 +52,7 @@ trait UIHelper extends Activity
 	def trackOnMap(call : String) {
 		val text = getString(R.string.map_track_call, call)
 		Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
-		startActivity(new Intent(this, classOf[MapAct]).setData(Uri.parse(call)))
+		MapModes.startMap(this, prefs, call)
 	}
 
 	def openPrefs(toastId : Int, act : Class[_]) {
@@ -61,6 +64,30 @@ trait UIHelper extends Activity
 			Toast.makeText(this, toastId, Toast.LENGTH_SHORT).show()
 			openedPrefs = true
 		}
+	}
+	def currentListOfPermissions() : Array[String] = {
+		val bi_perms = AprsBackend.defaultBackendPermissions(prefs)
+		val ls_perms = LocationSource.getPermissions(prefs)
+		(bi_perms ++ ls_perms).toArray
+	}
+
+	val START_SERVICE = 1001
+	val START_SERVICE_ONCE = 1002
+
+	override def getActionName(action : Int): Int = {
+		action match {
+		case START_SERVICE => R.string.startlog
+		case START_SERVICE_ONCE => R.string.singlelog
+		}
+	}
+	override def onAllPermissionsGranted(action : Int): Unit = {
+		action match {
+		case START_SERVICE => startService(AprsService.intent(this, AprsService.SERVICE))
+		case START_SERVICE_ONCE => startService(AprsService.intent(this, AprsService.SERVICE_ONCE))
+		}
+	}
+	def startAprsService(action : Int): Unit = {
+		checkPermissions(currentListOfPermissions(), action)
 	}
 
 	// manual stop: remember shutdown for next reboot
@@ -86,7 +113,7 @@ trait UIHelper extends Activity
 	def saveFirstRun(call : String, passcode : String) {
 		val pe = prefs.prefs.edit()
 		call.split("-") match {
-		case Array(callsign) => 
+		case Array(callsign) =>
 			pe.putString("callsign", callsign)
 		case Array(callsign, ssid) =>
 			pe.putString("callsign", callsign)
@@ -217,7 +244,7 @@ trait UIHelper extends Activity
 			.setView(aboutview)
 			.setIcon(android.R.drawable.ic_dialog_info)
 			.setPositiveButton(android.R.string.ok, null)
-			.setNeutralButton(R.string.ad_homepage, new UrlOpener(this, "http://aprsdroid.org/"))
+			.setNeutralButton(R.string.ad_homepage, new UrlOpener(this, "https://aprsdroid.org/"))
 			.create.show
 	}
 
@@ -294,7 +321,7 @@ trait UIHelper extends Activity
 			startActivity(new Intent(this, classOf[HubActivity]).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
 			true
 		case R.id.map =>
-			startActivity(new Intent(this, classOf[MapAct]).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
+			MapModes.startMap(this, prefs, "")
 			true
 		case R.id.log =>
 			startActivity(new Intent(this, classOf[LogActivity]).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
@@ -306,13 +333,13 @@ trait UIHelper extends Activity
 		case R.id.startstopbtn =>
 			val is_running = AprsService.running
 			if (!is_running) {
-				startService(AprsService.intent(this, AprsService.SERVICE))
+				startAprsService(START_SERVICE)
 			} else {
 				stopAprsService()
 			}
 			true
 		case R.id.singlebtn =>
-			startService(AprsService.intent(this, AprsService.SERVICE_ONCE))
+			startAprsService(START_SERVICE_ONCE)
 			true
 		// quit the app
 		//case R.id.quit =>
@@ -389,12 +416,12 @@ trait UIHelper extends Activity
 			}
 			true
 		case R.id.aprsfi =>
-			val url = "http://aprs.fi/info/a/%s?utm_source=aprsdroid&utm_medium=inapp&utm_campaign=aprsfi".format(targetcall)
+			val url = "https://aprs.fi/info/a/%s?utm_source=aprsdroid&utm_medium=inapp&utm_campaign=aprsfi".format(targetcall)
 			startActivity(new Intent(Intent.ACTION_VIEW,
 				Uri.parse(url)))
 			true
 		case R.id.qrzcom =>
-			val url = "http://qrz.com/db/%s".format(basecall)
+			val url = "https://qrz.com/db/%s".format(basecall)
 			startActivity(new Intent(Intent.ACTION_VIEW,
 				Uri.parse(url)))
 			true
@@ -433,7 +460,8 @@ trait UIHelper extends Activity
 	}
 	class LogExporter(storage : StorageDatabase, call : String) extends MyAsyncTask[Unit, String] {
 		val filename = "aprsdroid-%s.log".format(new SimpleDateFormat("yyyyMMdd-HHmm").format(new Date()))
-		val file = new File(Environment.getExternalStorageDirectory(), filename)
+		val directory = new File(Environment.getExternalStorageDirectory(), "APRSdroid")
+		val file = new File(directory, filename)
 
 		override def doInBackground1(params : Array[String]) : String = {
 			import StorageDatabase.Post._
@@ -443,6 +471,7 @@ trait UIHelper extends Activity
 				return getString(R.string.export_empty)
 			}
 			try {
+				directory.mkdirs()
 				val fo = new PrintWriter(file)
 				while (c.moveToNext()) {
 					val ts = c.getString(COLUMN_TSS)
@@ -467,11 +496,14 @@ trait UIHelper extends Activity
 			onStopLoading()
 			if (error != null)
 				Toast.makeText(UIHelper.this, error, Toast.LENGTH_SHORT).show()
-			else startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND)
+			else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+                                startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND)
 					.setType("text/plain")
 					.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
 					.putExtra(Intent.EXTRA_SUBJECT, filename),
 				file.toString()))
+                        else
+				Toast.makeText(UIHelper.this, file.toString(), Toast.LENGTH_LONG).show()
 		}
 	}
 }

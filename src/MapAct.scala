@@ -1,41 +1,40 @@
 package org.aprsdroid.app
 
+import _root_.android.Manifest
 import _root_.android.app.AlertDialog
-import _root_.android.content.{BroadcastReceiver, Context, DialogInterface, Intent, IntentFilter}
+import _root_.android.content.{DialogInterface, Intent, IntentFilter}
+import _root_.android.content.pm.PackageManager
 import _root_.android.content.res.Configuration
 import _root_.android.database.Cursor
-import _root_.android.graphics.drawable.{Drawable, BitmapDrawable}
+import _root_.android.graphics.drawable.{BitmapDrawable, Drawable}
 import _root_.android.graphics.{Canvas, Paint, Path, Point, Rect, Typeface}
-import _root_.android.os.{Bundle, Handler}
+import _root_.android.os.{Build, Bundle}
 import _root_.android.util.Log
 import _root_.android.view.{KeyEvent, Menu, MenuItem, View}
-import _root_.android.widget.SimpleCursorAdapter
-import _root_.android.widget.Spinner
-import _root_.android.widget.TextView
 import _root_.android.widget.Toast
 import _root_.org.mapsforge.android.maps._
-import _root_.org.mapsforge.core.GeoPoint
+import _root_.org.mapsforge.core.{GeoPoint, Tile}
 import _root_.org.mapsforge.android.maps.overlay.{ItemizedOverlay, OverlayItem}
+
 import _root_.scala.collection.mutable.ArrayBuffer
 import _root_.java.io.File
 import _root_.java.util.ArrayList
 
+import org.mapsforge.android.maps.mapgenerator.{MapGeneratorFactory, MapGeneratorInternal}
+
 // to make scala-style iterating over arraylist possible
 import scala.collection.JavaConversions._
 
-class MapAct extends MapActivity with UIHelper {
-	val TAG = "APRSdroid.Map"
+class MapAct extends MapActivity with MapMenuHelper {
+	override val TAG = "APRSdroid.Map"
 
 	menu_id = R.id.map
+
 	lazy val mapview = findViewById(R.id.mapview).asInstanceOf[MapView]
 	lazy val allicons = this.getResources().getDrawable(R.drawable.allicons)
 	lazy val db = StorageDatabase.open(this)
 	lazy val staoverlay = new StationOverlay(allicons, this, db)
-	lazy val loading = findViewById(R.id.loading)
-	lazy val targetcall = getTargetCall()
-
-	var showObjects = false
-
+	lazy val loading = findViewById(R.id.loading).asInstanceOf[View]
 	lazy val locReceiver = new LocationReceiver2[ArrayList[Station]](staoverlay.load_stations,
 			staoverlay.replace_stations, staoverlay.cancel_stations)
 
@@ -43,16 +42,11 @@ class MapAct extends MapActivity with UIHelper {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.mapview)
 		mapview.setBuiltInZoomControls(true)
-
-		locReceiver.startTask(null)
-		showObjects = prefs.getShowObjects()
-		//mapview.setSatellite(prefs.getShowSatellite())
 		mapview.getOverlays().add(staoverlay)
 
-		// listen for new positions
-		registerReceiver(locReceiver, new IntentFilter(AprsService.UPDATE))
-
+		startLoading()
 	}
+
 	override def onResume() {
 		super.onResume()
 		// only make it default if not tracking
@@ -62,7 +56,7 @@ class MapAct extends MapActivity with UIHelper {
 			setLongTitle(R.string.app_map, targetcall)
 		setKeepScreenOn()
 		setVolumeControls()
-		reloadMapAndTheme()
+		checkPermissions(Array(Manifest.permission.WRITE_EXTERNAL_STORAGE), RELOAD_MAP)
 	}
 
 	override def onConfigurationChanged(c : Configuration) = {
@@ -71,68 +65,72 @@ class MapAct extends MapActivity with UIHelper {
 			setLongTitle(R.string.app_map, targetcall)
 	}
 
+	override def onPause() {
+		super.onPause()
+		val pos = mapview.getMapPosition().getMapPosition()
+		if (pos == null || pos.geoPoint == null)
+			return
+		saveMapViewPosition(pos.geoPoint.latitudeE6/1000000.0f, pos.geoPoint.longitudeE6/1000000.0f, pos.zoomLevel)
+	}
+
 	override def onDestroy() {
 		super.onDestroy()
 		unregisterReceiver(locReceiver)
 	}
-	//override def isRouteDisplayed() = false
+
+        override def loadMapViewPosition(lat : Float, lon : Float, zoom : Float) {
+		mapview.getController().setCenter(new GeoPoint(lat, lon))
+		mapview.getController().setZoom(zoom.asInstanceOf[Int])
+        }
+
+	def startLoading() {
+		registerReceiver(locReceiver, new IntentFilter(AprsService.UPDATE))
+		locReceiver.startTask(null)
+	}
+
+	val RELOAD_MAP = 1010
+
+	override def getActionName(action : Int): Int = {
+		action match {
+		case RELOAD_MAP => R.string.show_map
+		case _ => super.getActionName(action)
+		}
+	}
+	override def onAllPermissionsGranted(action: Int): Unit = {
+		action match {
+		case RELOAD_MAP => reloadMapAndTheme()
+		case _ => super.onAllPermissionsGranted(action)
+		}
+	}
+
+	override def onPermissionsFailed(action: Int, permissions: Set[String]): Unit = {
+		if (action == RELOAD_MAP) {
+			if (targetcall == "")
+				startActivity(new Intent(this, classOf[HubActivity]).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+			finish()
+		}
+		super.onPermissionsFailed(action, permissions)
+	}
 
 	def reloadMapAndTheme() {
 		val mapfile = new File(prefs.getString("mapfile", android.os.Environment.getExternalStorageDirectory() + "/aprsdroid.map"))
 		if (mapfile.exists())
 			mapview.setMapFile(mapfile)
 		else {
-			Toast.makeText(this, getString(R.string.mapfile_error, mapfile), Toast.LENGTH_SHORT).show()
-			finish()
+			if (prefs.getString("mapfile", null) != null)
+				Toast.makeText(this, getString(R.string.mapfile_error, mapfile), Toast.LENGTH_SHORT).show()
+			val map_source = MapGeneratorInternal.MAPNIK
+			val map_gen = new OsmTileDownloader()
+			//TODO in later mapsforge:
+			//map_gen match {
+			//	case map_gen_tile : TileDownloader => map_gen_tile.setUserAgent("APRSdroid")
+			//}
+			mapview.setMapGenerator(map_gen)
 		}
 		val themefile = new File(prefs.getString("themefile", android.os.Environment.getExternalStorageDirectory() + "/aprsdroid.xml"))
 		if (themefile.exists())
 			mapview.setRenderTheme(themefile)
-	}
-
-	override def onCreateOptionsMenu(menu : Menu) : Boolean = {
-		getMenuInflater().inflate(R.menu.options_map, menu);
-		if (targetcall != "")
-			getMenuInflater().inflate(R.menu.context_call, menu);
-		else {
-			getMenuInflater().inflate(R.menu.options_activities, menu);
-			getMenuInflater().inflate(R.menu.options, menu);
-		}
-		menu.findItem(R.id.map).setVisible(false)
-		true
-	}
-
-	// override this to only call UIHelper on "bare" map
-	override def onPrepareOptionsMenu(menu : Menu) : Boolean = {
-		if (targetcall == "")
-			super.onPrepareOptionsMenu(menu)
-		else {
-			menu.findItem(R.id.objects).setChecked(prefs.getShowObjects())
-			menu.findItem(R.id.satellite).setChecked(prefs.getShowSatellite())
-			true
-		}
-	}
-
-	override def onOptionsItemSelected(mi : MenuItem) : Boolean = {
-		mi.getItemId match {
-		case R.id.objects =>
-			val newState = prefs.toggleBoolean("show_objects", true)
-			mi.setChecked(newState)
-			showObjects = newState
-			onStartLoading()
-			locReceiver.startTask(null)
-			true
-		case R.id.satellite =>
-			val newState = prefs.toggleBoolean("show_satellite", false)
-			mi.setChecked(newState)
-			//mapview.setSatellite(newState)
-			true
-		case _ =>
-			if (targetcall != "" && callsignAction(mi.getItemId, targetcall))
-				true
-			else
-				super.onOptionsItemSelected(mi)
-		}
+		loadMapViewPosition()
 	}
 
 	override def onKeyDown(keyCode : Int, event : KeyEvent) : Boolean = {
@@ -147,13 +145,6 @@ class MapAct extends MapActivity with UIHelper {
 			true
 		case _ => super.onKeyDown(keyCode, event)
 		}
-	}
-
-	def getTargetCall() : String = {
-		val i = getIntent()
-		if (i != null && i.getDataString() != null) {
-			i.getDataString()
-		} else ""
 	}
 
 	def changeZoom(delta : Int) {
@@ -172,6 +163,11 @@ class MapAct extends MapActivity with UIHelper {
 		mapview.invalidate()
 		onStopLoading()
 		animateToCall()
+	}
+
+	override def reloadMap() {
+		onStartLoading()
+		locReceiver.startTask(null)
 	}
 
 	override def onStartLoading() {
@@ -270,6 +266,8 @@ class StationOverlay(icons : Drawable, context : MapAct, db : StorageDatabase) e
 
 	override def drawOverlayBitmap(c : Canvas, dp : Point, proj : Projection, zoom : Byte) : Unit = {
 
+		if (!context.mapview.getMapPosition.isValid)
+			return
 		Log.d(TAG, "draw: symbolSize=" + symbolSize + " drawSize=" + drawSize)
 		val fontSize = drawSize*7/8
 		val textPaint = new Paint()
