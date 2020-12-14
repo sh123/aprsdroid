@@ -2,11 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="org.aprsdroid.app"
       android:versionCode="19"
-      android:versionName="1.5.0"
+      android:versionName="1.6.0"
       android:installLocation="auto">
-
-    <uses-sdk android:minSdkVersion="8"
-	android:targetSdkVersion="19" />
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
@@ -14,24 +11,29 @@
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
-    <uses-library android:name="android.test.runner" android:required="false" />
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application android:label="@string/app_name" android:icon="@drawable/icon"
+	    android:name=".APRSdroidApplication"
+	    android:usesCleartextTraffic="true"
 	    android:theme="@style/DefaultTheme" >
-	<uses-library android:name="com.google.android.maps" />
 
+	<meta-data
+		android:name="com.google.android.geo.API_KEY"
+		android:value="@string/google_maps_key" />
+	<uses-library android:name="org.apache.http.legacy" android:required="false"/>
         <activity android:name=".APRSdroid"
 		android:configChanges="orientation|keyboardHidden|screenSize"
                   android:label="@string/app_name">
@@ -82,7 +84,13 @@
 		android:parentActivityName=".PrefsAct"
 		android:launchMode="singleTop"
 		/>
-        <activity android:name=".MapAct" android:label="@string/app_map"
+	<activity android:name=".GoogleMapAct" android:label="@string/app_map"
+		android:launchMode="singleTop"
+		android:parentActivityName=".HubActivity"
+		android:configChanges="orientation|keyboardHidden|screenSize"
+		android:theme="@style/MapViewTheme" >
+	</activity>
+	<activity android:name=".MapAct" android:label="@string/app_map"
 		android:launchMode="singleTop"
 		android:parentActivityName=".HubActivity"
 		android:configChanges="orientation|keyboardHidden|screenSize"
@@ -155,4 +163,4 @@
 	    </intent-filter>
 	</receiver>
     </application>
-</manifest> 
+</manifest>

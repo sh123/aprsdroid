@@ -53,6 +53,8 @@ class PrefsAct extends PreferenceActivity {
 	override def onCreate(savedInstanceState: Bundle) {
 		super.onCreate(savedInstanceState)
 		addPreferencesFromResource(R.xml.preferences)
+		fileChooserPreference("mapfile", 123456, R.string.p_mapfile_choose)
+		fileChooserPreference("themefile", 123457, R.string.p_themefile_choose)
 	}
 	override def onResume() {
 		super.onResume()
@@ -111,8 +113,10 @@ class PrefsAct extends PreferenceActivity {
 	override def onActivityResult(reqCode : Int, resultCode : Int, data : Intent) {
 		android.util.Log.d("PrefsAct", "onActResult: request=" + reqCode + " result=" + resultCode + " " + data)
 		if (resultCode == android.app.Activity.RESULT_OK && reqCode == 123456) {
+			parseFilePickerResult(data, "mapfile", R.string.mapfile_error)
 		} else
 		if (resultCode == android.app.Activity.RESULT_OK && reqCode == 123457) {
+			parseFilePickerResult(data, "themefile", R.string.themefile_error)
 		} else
 		if (resultCode == android.app.Activity.RESULT_OK && reqCode == 123458) {
 			data.setClass(this, classOf[ProfileImportActivity])

@@ -12,6 +12,7 @@
 <!-- APRSdroid activity -->
 <string name="firstrun">Sie müssen Ihr Rufzeichen und den dazugehörigen Passcode eingeben!</string>
 <string name="wrongpasscode">Der Passcode für Ihr Rufzeichen ist nicht korrekt!</string>
+<string name="e_toolong_callsign">Ihr Rufzeichen ist zu lang für Packet Radio!</string>
 <string name="anon_warning">Ohne Passcode-Angabe werden Ihre Meldungen nicht weitergeleitet!</string>
 <string name="mininterval">Minimale Update-Zeit ist 1 Minute!</string>
 <string name="singlelog">Position senden</string>
@@ -72,7 +73,7 @@ Drücken Sie den \"Menü\"-Knopf, um eine Positionsmeldung abzusetzen oder das T
 
 <!-- about dialog -->
 <string name="ad_title">Über APRSdroid v%s</string>
-<string name="ad_copyright">Copyright © 2009-2018 Georg Lukas (DO1GL)\n http://aprsdroid.org \n\n APRS® is a registered trademark of Bob Bruninga (WB4APR)</string>
+<string name="ad_copyright">Copyright © 2009-2020 Georg Lukas (DO1GL)\n https://aprsdroid.org \n\n APRS® is a registered trademark of Bob Bruninga (WB4APR)</string>
 <string name="ad_gpl">Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 2 der Lizenz oder (nach Ihrer Option) jeder späteren Version.
 \n\n
 Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, daß es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details finden Sie in der GNU General Public License.
@@ -93,7 +94,11 @@ http://www.gnu.de/documents/gpl-2.0.de.html</string>
 
 <!-- map view -->
 <string name="map_overlays">Ebenen</string>
-<string name="map_satellite">Satellit</string>
+<string name="map_google">Google: Karte</string>
+<string name="map_satellite">Google: Satellit</string>
+<string name="map_osm">OpenStreetMap.org</string>
+<!-- intended use is in map style menu: "file name of offline map (Offline)" -->
+<string name="map_offline">%s (Offline)</string>
 <string name="map_objects">APRS-Objekte</string>
 
 <!-- map view -->
@@ -394,4 +399,6 @@ http://www.gnu.de/documents/gpl-2.0.de.html</string>
 <string name="p_serial_unsupported">Serieller Port nicht unterstützt!</string>
 <string name="p_serial_noperm">Keine Berechtigung für USB-Gerät!</string>
 <string name="p_serial_notfound">Kein USB-Gerät gefunden!</string>
+
+<string name="no_perm_text">Die folgenden Berechtigungen werden benötigt:</string>
 </resources>
