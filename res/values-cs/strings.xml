@@ -12,6 +12,7 @@
 <!-- APRSdroid activity -->
 <string name="firstrun">Nejdříve musíte nastavit svoji volací značku a APRS-IS kód.</string>
 <string name="wrongpasscode">Tvůj APRS-IS kód neodpovídá tvé volací značce.</string>
+<string name="e_toolong_callsign">Your callsign is too long for Packet Radio!</string>
 <string name="anon_warning">Bez APRS-IS kódu se nebude odesílat poloha.</string>
 <string name="mininterval">Minimalní čas obnovy polohy je 1 minuta!</string>
 <string name="singlelog">Odeslat pozici</string>
@@ -70,8 +71,8 @@
 
 <!-- about dialog -->
 <string name="ad_title">O APRSdroid v%s</string>
-<string name="ad_copyright">Copyright © 2009-2018 Georg Lukas (DO1GL)\n
-	http://aprsdroid.org
+<string name="ad_copyright">Copyright © 2009-2020 Georg Lukas (DO1GL)\n
+	https://aprsdroid.org
 	\n\n
 	APRS® is a registered trademark of Bob Bruninga (WB4APR)
 </string>
@@ -89,7 +90,11 @@
 
 <!-- map view -->
 <string name="map_overlays">Překryvy</string>
-<string name="map_satellite">Satelit</string>
+<string name="map_google">Google: Map</string>
+<string name="map_satellite">Google: Satellite</string>
+<string name="map_osm">OpenStreetMap.org</string>
+<!-- intended use is in map style menu: "file name of offline map (Offline)" -->
+<string name="map_offline"> %s (Offline)</string>
 <string name="map_objects">APRS Objekt</string>
 
 <!-- map view -->
@@ -392,4 +397,6 @@
 <string name="p_serial_unsupported">Nepodporovaný sériový port!</string>
 <string name="p_serial_noperm">Chybí oprávnění pro USB zařízení!</string>
 <string name="p_serial_notfound">USB zařízení nenalezeno.</string>
+
+<string name="no_perm_text">The following permissions are required:</string>
 </resources>

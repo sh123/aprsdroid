@@ -12,6 +12,7 @@
 <!-- APRSdroid activity -->
 <string name="firstrun">Du muss APRSdroid mat dengem Rufzeechen an Passcode konfiguréieren!</string>
 <string name="wrongpasscode">Den Passcode passt net zum Rufzeechen!</string>
+<string name="e_toolong_callsign">Your callsign is too long for Packet Radio!</string>
 <string name="anon_warning">Ouni Passcode ginn deng Infoe net viru geschéckt!</string>
 <string name="mininterval">Klengst  Updatezäit ass 1 Minutt!</string>
 <string name="singlelog">Positioun schécken</string>
@@ -70,7 +71,7 @@
 
 <!-- about dialog -->
 <string name="ad_title">Iwwer APRSdroid v%s</string>
-<string name="ad_copyright">Copyright © 2009-2018 Georg Lukas (DO1GL)\n http://aprsdroid.org \n\n APRS® ass eng registréiert Handelsmark vum Bob Bruninga (WB4APR)</string>
+<string name="ad_copyright">Copyright © 2009-2020 Georg Lukas (DO1GL)\n https://aprsdroid.org \n\n APRS® ass eng registréiert Handelsmark vum Bob Bruninga (WB4APR)</string>
 <string name="ad_gpl">Dëst ass eng fräi Software; du kanns se ënnert den Konditiounen vun der GNU General Public License wéi se vun der Free Software Foundation publizéiert ginn ass virun verdeelen an/oder modifizéieren; entweder ënnert der Versioun 2 vun der Lizenz, oder (als deng Optioun) ënnert enger méi spéiderer Versioun. \n\n Dësen Programm gëtt an der Hoffnung verdeelt, dass en nëtzlech ass, mee OUNI IRGENDENG GARANTIE; och ouni di implizéiert Garantie fir MARKTGÄNGEGKEET oder FITNESS FIR EN BESONNESCHEN ZWECK. Kuck an der GNU General Public License fir weider Detailer. \n\n Du miss eng Kopie vun der GNU General Public License mat dësem Programm kritt hunn; wann net, dann schreif un d\'Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA. \n\n http://www.gnu.org/licenses/old-licenses/gpl-2.0.html</string>
 <string name="ad_thanks">E Merci un:</string>
 <string name="ad_thanks_0">Meng YL ♥♥♥</string>
@@ -85,7 +86,11 @@
 
 <!-- map view -->
 <string name="map_overlays">Ablendung</string>
-<string name="map_satellite">Satellit</string>
+<string name="map_google">Google: Map</string>
+<string name="map_satellite">Google: Satellite</string>
+<string name="map_osm">OpenStreetMap.org</string>
+<!-- intended use is in map style menu: "file name of offline map (Offline)" -->
+<string name="map_offline"> %s (Offline)</string>
 <string name="map_objects">APRS Objet\'en</string>
 
 <!-- map view -->
@@ -328,6 +333,7 @@
 <string name="themefile_error">Fehler beim Themendatei %s lueden!</string>
 
 <string name="translator_credits">Launchpad Contributions:
+  Georg Lukas https://launchpad.net/~ge0rg
   heedge https://launchpad.net/~heedge</string>
 
 <!-- Bluetooth TNC settings -->
@@ -384,4 +390,6 @@
 <string name="p_serial_unsupported">Deen serielle Port gëtt net ënnerstëtzt!</string>
 <string name="p_serial_noperm">Keng Erlaabnis fir USB Gerät!</string>
 <string name="p_serial_notfound">Keen USB Gerät fond!</string>
+
+<string name="no_perm_text">The following permissions are required:</string>
 </resources>

@@ -12,6 +12,7 @@
 <!-- APRSdroid activity -->
 <string name="firstrun">Вам потрібно налаштувати APRSdroid за допомогою вашого позивного і пароля!</string>
 <string name="wrongpasscode">Ваш пароль не збігається з вашим позивним!</string>
+<string name="e_toolong_callsign">Your callsign is too long for Packet Radio!</string>
 <string name="anon_warning">Без пароля ваші звіти не будуть розповсюджені!</string>
 <string name="mininterval">Мінімальний час оновлення - 1 хвилина!</string>
 <string name="singlelog">Надіслати позицію</string>
@@ -71,8 +72,8 @@
 
 <!-- about dialog -->
 <string name="ad_title">Про APRSdroid v%s</string>
-<string name="ad_copyright">Copyright © 2009-2018 Georg Lukas (DO1GL)\n
-	http://aprsdroid.org
+<string name="ad_copyright">Copyright © 2009-2020 Georg Lukas (DO1GL)\n
+	https://aprsdroid.org
 	\n\n
 	APRS® is a registered trademark of Bob Bruninga (WB4APR)
 </string>
@@ -105,7 +106,11 @@
 
 <!-- map view -->
 <string name="map_overlays">Накладки</string>
-<string name="map_satellite">Супутник</string>
+<string name="map_google">Google: Map</string>
+<string name="map_satellite">Google: Satellite</string>
+<string name="map_osm">OpenStreetMap.org</string>
+<!-- intended use is in map style menu: "file name of offline map (Offline)" -->
+<string name="map_offline"> %s (Offline)</string>
 <string name="map_objects">Об\'єкти APRS</string>
 
 <!-- map view -->
@@ -348,6 +353,7 @@
 <string name="themefile_error">Error loading theme file %s!</string>
 
 <string name="translator_credits">Launchpad Contributions:
+  Georg Lukas https://launchpad.net/~ge0rg
   Michal SQ2MO https://launchpad.net/~sq2mo</string>
 
 <!-- Bluetooth TNC settings -->
@@ -404,4 +410,6 @@
 <string name="p_serial_unsupported">Послідовний порт не підтримується!</string>
 <string name="p_serial_noperm">Немає дозволу на USB-пристрій!</string>
 <string name="p_serial_notfound">Не знайдено пристрою USB!</string>
+
+<string name="no_perm_text">The following permissions are required:</string>
 </resources>

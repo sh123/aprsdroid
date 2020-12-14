@@ -1,5 +1,6 @@
 package org.aprsdroid.app
 
+import android.Manifest
 import _root_.net.ab0oo.aprs.parser.APRSPacket
 import _root_.java.io.{InputStream, OutputStream}
 
@@ -18,6 +19,7 @@ object AprsBackend {
 	class BackendInfo(
 		val create : (AprsService, PrefsWrapper) => AprsBackend,
 		val prefxml : Int,
+		val permissions : Set[String],
 		val duplex : Int,
 		val need_passcode : Int
 	) {}
@@ -39,36 +41,43 @@ object AprsBackend {
 		"udp" -> new BackendInfo(
 			(s, p) => new UdpUploader(p),
 			R.xml.backend_udp,
+			Set(),
 			CAN_XMIT,
 			PASSCODE_REQUIRED),
 		"http" -> new BackendInfo(
 			(s, p) => new HttpPostUploader(p),
 			R.xml.backend_http,
+			Set(),
 			CAN_XMIT,
 			PASSCODE_REQUIRED),
 		"afsk" -> new BackendInfo(
 			(s, p) => new AfskUploader(s, p),
 			0,
+      Set(Manifest.permission.RECORD_AUDIO),
 			CAN_DUPLEX,
 			PASSCODE_NONE),
 		"tcp" -> new BackendInfo(
 			(s, p) => new TcpUploader(s, p),
 			R.xml.backend_tcp,
+			Set(),
 			CAN_DUPLEX,
 			PASSCODE_OPTIONAL),
 		"bluetooth" -> new BackendInfo(
 			(s, p) => new BluetoothTnc(s, p),
 			R.xml.backend_bluetooth,
+			Set(Manifest.permission.BLUETOOTH_ADMIN),
 			CAN_DUPLEX,
 			PASSCODE_NONE),
 		"tcpip" -> new BackendInfo(
 			(s, p) => new TcpUploader(s, p),
 			R.xml.backend_tcptnc,
+			Set(),
 			CAN_DUPLEX,
 			PASSCODE_NONE),
 		"usb" -> new BackendInfo(
 			(s, p) => new UsbTnc(s, p),
 			R.xml.backend_usb,
+			Set(),
 			CAN_DUPLEX,
 			PASSCODE_NONE)
 		)
@@ -113,6 +122,13 @@ object AprsBackend {
 		}
 	}
 
+	def defaultBackendPermissions(prefs : PrefsWrapper) : Set[String] = {
+		val perms = scala.collection.mutable.Set[String]()
+		perms ++= AprsBackend.defaultBackendInfo(prefs).permissions
+		if (prefs.getProto() == "kenwood" && prefs.getBoolean("kenwood.gps", false))
+			perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
+		perms.toSet
+	}
 
 	def instanciateUploader(service : AprsService, prefs : PrefsWrapper) : AprsBackend = {
 		defaultBackendInfo(prefs).create(service, prefs)

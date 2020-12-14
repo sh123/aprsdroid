@@ -12,6 +12,7 @@
 <!-- APRSdroid activity -->
 <string name="firstrun">Tu necessita configurar APRSdroid con tu firma de appello e tu codice de accesso!</string>
 <string name="wrongpasscode">Tu codice de accesso non concorda con tu firma de appello</string>
+<string name="e_toolong_callsign">Your callsign is too long for Packet Radio!</string>
 <string name="anon_warning">Sin un codice de accesso, tu reportos non essera propagate!</string>
 <string name="mininterval">Tempore minime de actualisation 1 minuta!</string>
 <string name="singlelog">Inviar le position</string>
@@ -70,8 +71,8 @@
 
 <!-- about dialog -->
 <string name="ad_title">Re APRSdroid v%s</string>
-<string name="ad_copyright">Copyright © 2009-2018 Georg Lukas (DO1GL)\n
-	http://aprsdroid.org
+<string name="ad_copyright">Copyright © 2009-2020 Georg Lukas (DO1GL)\n
+	https://aprsdroid.org
 	\n\n
 	APRS® is a registered trademark of Bob Bruninga (WB4APR)
 </string>
@@ -89,7 +90,11 @@
 
 <!-- map view -->
 <string name="map_overlays">Coperturas</string>
-<string name="map_satellite">Satellite</string>
+<string name="map_google">Google: Map</string>
+<string name="map_satellite">Google: Satellite</string>
+<string name="map_osm">OpenStreetMap.org</string>
+<!-- intended use is in map style menu: "file name of offline map (Offline)" -->
+<string name="map_offline"> %s (Offline)</string>
 <string name="map_objects">Objectos APRS</string>
 
 <!-- map view -->
@@ -388,4 +393,6 @@
 <string name="p_serial_unsupported">Porta serial non supportate</string>
 <string name="p_serial_noperm">Nulle permission pro le dispositivo USB!</string>
 <string name="p_serial_notfound">Nulle dispositivo USB trovate!</string>
+
+<string name="no_perm_text">The following permissions are required:</string>
 </resources>
